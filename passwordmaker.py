@@ -49,6 +49,7 @@ It can be used both on the command-line and with a GUI based on TKinter.
 
 
 import argparse
+import datetime
 import sys
 
 try:
@@ -170,10 +171,14 @@ class Application(tk.Frame):
         "l3t": UseLeetWidget,
     }
 
+    timeout = datetime.timedelta(minutes=5)
+
     def __init__(self, root=None):
         self.root = root
         tk.Frame.__init__(self, root)
         self.background = root.cget("background")
+
+        self.last_event_time = datetime.datetime.now()
 
         self.settings_list = PwmSettingsList()
         self.settings = self.settings_list.get_pwm_settings()
@@ -183,8 +188,13 @@ class Application(tk.Frame):
 
         self.load()
 
+        self.autoclose()
+
     def create_widgets(self):
         """Creates all widgets in main window"""
+
+        self.bind_all("<Button>", self.on_event)
+        self.bind_all("<Key>", self.on_event)
 
         # Entry widgets
 
@@ -208,7 +218,7 @@ class Application(tk.Frame):
         self.passwd_label = tk.Label(self, justify="left", text="Password")
         self.listbox_label = tk.Label(self, justify="left", text="Settings")
         self.listbox = tk.Listbox(self)
-        self.listbox .bind('<<ListboxSelect>>', self.on_listbox)
+        self.listbox.bind('<<ListboxSelect>>', self.on_listbox)
         self.listbox.insert("end", "default")
         self.listbox.select_set(0)
         self.new_setting_button = tk.Button(self, text="+",
@@ -357,6 +367,20 @@ class Application(tk.Frame):
         self.passwd_text.insert(0, pwd[:2]+"*"*(len(pwd)-2))
         self.clipboard_clear()
         self.clipboard_append(pwd)
+
+    def on_event(self, event):
+        """Mouse click and key event handler"""
+
+        self.last_event_time = datetime.datetime.now()
+
+    def autoclose(self):
+        """Close application if nothing has changed for 2 min"""
+
+        now = datetime.datetime.now()
+        if now - self.last_event_time < self.timeout:
+            self.after(self.timeout.seconds * 1000, self.autoclose)
+        else:
+            self.quit()
 
 
 def gui():
