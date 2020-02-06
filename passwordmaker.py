@@ -380,6 +380,7 @@ class Application(tk.Frame):
         if now - self.last_event_time < self.timeout:
             self.after(self.timeout.seconds * 1000, self.autoclose)
         else:
+            self.clipboard_clear()
             self.quit()
 
 
